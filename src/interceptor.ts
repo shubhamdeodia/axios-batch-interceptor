@@ -7,10 +7,10 @@ import axios, {
 
 const { CancelToken } = axios;
 
-interface IRequestQueue {
+interface IRequestMap {
     [key: string]: CancelTokenSource;
 }
-const requestQueue: IRequestQueue = {};
+const requestMap: IRequestMap = {};
 
 const batchedFileIds: string[] = [];
 /**
@@ -26,11 +26,11 @@ function batchInterceptor(instance: AxiosInstance) {
             batchedFileIds.push(...originalRequest.params.ids);
 
             // cancel the request if subsequent request has been made for same url
-            if (requestQueue[request.url]) {
-                const source = requestQueue[request.url];
+            if (requestMap[request.url]) {
+                const source = requestMap[request.url];
 
                 // delete the request from queue
-                delete requestQueue[request.url];
+                delete requestMap[request.url];
 
                 // cancelling the request with message
                 source.cancel(`Canceling requests, batching started...`);
@@ -40,7 +40,7 @@ function batchInterceptor(instance: AxiosInstance) {
             originalRequest.cancelToken = source.token;
 
             // new entry request is not cancelled only the previous request is cancelled
-            requestQueue[request.url] = source;
+            requestMap[request.url] = source;
 
             originalRequest.params = {
                 // remove the duplicates fileId
